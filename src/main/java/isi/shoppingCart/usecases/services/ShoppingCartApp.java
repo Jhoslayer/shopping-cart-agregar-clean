@@ -2,38 +2,90 @@ package isi.shoppingCart.usecases.services;
 
 import isi.shoppingCart.entities.Cart;
 import isi.shoppingCart.entities.CartItem;
+import isi.shoppingCart.entities.Customer;
 import isi.shoppingCart.entities.Product;
+import isi.shoppingCart.entities.Purchase;
 import isi.shoppingCart.infrastructure.repositories.InMemoryCartRepository;
+import isi.shoppingCart.infrastructure.repositories.InMemoryCustomerRepository;
 import isi.shoppingCart.infrastructure.repositories.InMemoryProductRepository;
+import isi.shoppingCart.infrastructure.repositories.InMemoryPurchaseRepository;
 import isi.shoppingCart.usecases.dto.OperationResult;
 import isi.shoppingCart.usecases.ports.CartRepository;
+import isi.shoppingCart.usecases.ports.CustomerRepository;
 import isi.shoppingCart.usecases.ports.ProductRepository;
+import isi.shoppingCart.usecases.ports.PurchaseRepository;
+
 import java.util.List;
 
 public class ShoppingCartApp {
+
     private ProductRepository productRepository;
     private CartRepository cartRepository;
+    private CustomerRepository customerRepository;
+    private PurchaseRepository purchaseRepository;
+
     private AgregarProductoAlCarritoUseCase agregarProductoAlCarritoUseCase;
+    private ConfirmarCompraUseCase confirmarCompraUseCase;
+    private EliminarProductoDelCarritoUseCase eliminarProductoDelCarritoUseCase;
+
+    // ✅ NUEVOS USE CASES
+    private AumentarCantidadUseCase aumentarCantidadUseCase;
+    private DisminuirCantidadUseCase disminuirCantidadUseCase;
 
     public ShoppingCartApp() {
         productRepository = new InMemoryProductRepository();
         cartRepository = new InMemoryCartRepository();
-        agregarProductoAlCarritoUseCase = new AgregarProductoAlCarritoUseCase(productRepository, cartRepository);
+        customerRepository = new InMemoryCustomerRepository();
+        purchaseRepository = new InMemoryPurchaseRepository();
+
+        agregarProductoAlCarritoUseCase =
+                new AgregarProductoAlCarritoUseCase(productRepository, cartRepository);
+
+        confirmarCompraUseCase =
+                new ConfirmarCompraUseCase(cartRepository, customerRepository, purchaseRepository);
+
+        eliminarProductoDelCarritoUseCase =
+                new EliminarProductoDelCarritoUseCase(cartRepository);
+
+        // ✅ INICIALIZAR NUEVOS CASOS
+        aumentarCantidadUseCase =
+                new AumentarCantidadUseCase(cartRepository, productRepository);
+
+        disminuirCantidadUseCase =
+                new DisminuirCantidadUseCase(cartRepository);
 
         cargarDatosIniciales();
     }
 
     public ShoppingCartApp(ProductRepository productRepository,
                            CartRepository cartRepository,
-                           AgregarProductoAlCarritoUseCase agregarProductoAlCarritoUseCase) {
+                           CustomerRepository customerRepository,
+                           PurchaseRepository purchaseRepository,
+                           AgregarProductoAlCarritoUseCase agregarProductoAlCarritoUseCase,
+                           ConfirmarCompraUseCase confirmarCompraUseCase,
+                           EliminarProductoDelCarritoUseCase eliminarProductoDelCarritoUseCase,
+                           AumentarCantidadUseCase aumentarCantidadUseCase,
+                           DisminuirCantidadUseCase disminuirCantidadUseCase) {
+
         this.productRepository = productRepository;
         this.cartRepository = cartRepository;
+        this.customerRepository = customerRepository;
+        this.purchaseRepository = purchaseRepository;
         this.agregarProductoAlCarritoUseCase = agregarProductoAlCarritoUseCase;
+        this.confirmarCompraUseCase = confirmarCompraUseCase;
+        this.eliminarProductoDelCarritoUseCase = eliminarProductoDelCarritoUseCase;
+        this.aumentarCantidadUseCase = aumentarCantidadUseCase;
+        this.disminuirCantidadUseCase = disminuirCantidadUseCase;
     }
 
     private void cargarDatosIniciales() {
+        cargarClienteInicial();
         cargarCatalogoInicial();
         cargarCarritoInicial();
+    }
+
+    private void cargarClienteInicial() {
+        customerRepository.save(new Customer(1, "Cliente de prueba"));
     }
 
     private void cargarCatalogoInicial() {
@@ -68,6 +120,10 @@ public class ShoppingCartApp {
         cartRepository.save(cart);
     }
 
+    public Customer getCustomer() {
+        return customerRepository.getCustomer();
+    }
+
     public List<Product> getCatalogProducts() {
         return productRepository.findAll();
     }
@@ -82,7 +138,29 @@ public class ShoppingCartApp {
         return cart.getTotal();
     }
 
+    public List<Purchase> getPurchases() {
+        return purchaseRepository.findAll();
+    }
+
     public OperationResult addProductToCart(int productId) {
         return agregarProductoAlCarritoUseCase.execute(productId);
+    }
+
+    public OperationResult confirmPurchase() {
+        return confirmarCompraUseCase.execute();
+    }
+
+    public OperationResult removeProductFromCart(int productId) {
+        return eliminarProductoDelCarritoUseCase.execute(productId);
+    }
+
+    // ✅ NUEVOS MÉTODOS
+
+    public OperationResult increaseQuantity(int productId) {
+        return aumentarCantidadUseCase.execute(productId);
+    }
+
+    public OperationResult decreaseQuantity(int productId) {
+        return disminuirCantidadUseCase.execute(productId);
     }
 }

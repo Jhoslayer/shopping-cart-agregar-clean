@@ -1,6 +1,7 @@
 package isi.shoppingCart.entities;
 
 public class CartItem {
+
     private Product product;
     private int quantity;
 
@@ -17,11 +18,19 @@ public class CartItem {
         return quantity;
     }
 
-    public void increaseQuantity() {
-        quantity = quantity + 1;
-    }
-
     public double getSubtotal() {
         return product.getPrice() * quantity;
+    }
+
+    public void increaseQuantity(int maxStock) {
+        if (this.quantity < maxStock) {
+            this.quantity++;
+        }
+    }
+
+    public void decreaseQuantity() {
+        if (this.quantity > 0) {
+            this.quantity--;
+        }
     }
 }

@@ -1,39 +1,35 @@
 package isi.shoppingCart.usecases.services;
 
 import isi.shoppingCart.entities.Cart;
-import isi.shoppingCart.entities.Product;
 import isi.shoppingCart.usecases.dto.OperationResult;
 import isi.shoppingCart.usecases.ports.CartRepository;
-import isi.shoppingCart.usecases.ports.ProductRepository;
 
-public class AgregarProductoAlCarritoUseCase {
-    private ProductRepository productRepository;
+public class EliminarProductoDelCarritoUseCase {
+
     private CartRepository cartRepository;
 
-    public AgregarProductoAlCarritoUseCase(ProductRepository productRepository,
-                                           CartRepository cartRepository) {
-        this.productRepository = productRepository;
+    public EliminarProductoDelCarritoUseCase(CartRepository cartRepository) {
         this.cartRepository = cartRepository;
     }
 
     public OperationResult execute(int productId) {
-        Product product = productRepository.findById(productId);
-
-        if (product == null) {
-            return OperationResult.fail("Producto no encontrado.");
-        }
 
         Cart cart = cartRepository.getCart();
-        int quantityInCart = cart.getQuantityByProductId(productId);
-        int availableQuantity = product.getAvailableQuantity();
 
-        if (quantityInCart >= availableQuantity) {
-            return OperationResult.fail("No se puede agregar más unidades. Cantidad disponible: " + availableQuantity + ".");
+        boolean exists = cart.getItems().stream()
+                .anyMatch(item -> item.getProduct().getId() == productId);
+
+        if (!exists) {
+            return OperationResult.fail("El producto no está en el carrito.");
         }
 
-        cart.addProduct(product);
+        cart.removeProduct(productId);
         cartRepository.save(cart);
 
-        return OperationResult.ok("Producto agregado al carrito.");
+        if (cart.getItems().isEmpty()) {
+            return OperationResult.ok("Producto eliminado. El carrito está vacío.");
+        }
+
+        return OperationResult.ok("Producto eliminado del carrito.");
     }
 }

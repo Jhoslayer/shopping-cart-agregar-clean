@@ -8,7 +8,7 @@ public class Cart {
     private List<CartItem> items;
 
     public Cart() {
-        items = new ArrayList<CartItem>();
+        items = new ArrayList<>();
     }
 
     public List<CartItem> getItems() {
@@ -16,13 +16,10 @@ public class Cart {
     }
 
     public void addProduct(Product product) {
-        int i;
-
-        for (i = 0; i < items.size(); i++) {
-            CartItem item = items.get(i);
+        for (CartItem item : items) {
 
             if (item.getProduct().getId() == product.getId()) {
-                item.increaseQuantity();
+                item.increaseQuantity(product.getAvailableQuantity());
                 return;
             }
         }
@@ -30,11 +27,38 @@ public class Cart {
         items.add(new CartItem(product, 1));
     }
 
-    public int getQuantityByProductId(int productId) {
-        int i;
+    public void removeProduct(int productId) {
+        items.removeIf(item -> item.getProduct().getId() == productId);
+    }
 
-        for (i = 0; i < items.size(); i++) {
-            CartItem item = items.get(i);
+    public boolean increaseProductQuantity(int productId, int maxStock) {
+        for (CartItem item : items) {
+            if (item.getProduct().getId() == productId) {
+                if (item.getQuantity() < maxStock) {
+                    item.increaseQuantity(maxStock);
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    public void decreaseProductQuantity(int productId) {
+        for (CartItem item : items) {
+            if (item.getProduct().getId() == productId) {
+                item.decreaseQuantity();
+
+                if (item.getQuantity() == 0) {
+                    removeProduct(productId);
+                }
+                return;
+            }
+        }
+    }
+
+    public int getQuantityByProductId(int productId) {
+        for (CartItem item : items) {
 
             if (item.getProduct().getId() == productId) {
                 return item.getQuantity();
@@ -46,10 +70,9 @@ public class Cart {
 
     public double getTotal() {
         double total = 0.0;
-        int i;
 
-        for (i = 0; i < items.size(); i++) {
-            total = total + items.get(i).getSubtotal();
+        for (CartItem item : items) {
+            total += item.getSubtotal();
         }
 
         return total;
